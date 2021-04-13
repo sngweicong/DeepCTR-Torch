@@ -51,7 +51,7 @@ class FiBiNET(BaseModel):
                        activation=dnn_activation, l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=False,
                        init_std=init_std, device=device)
         self.dnn_linear = nn.Linear(dnn_hidden_units[-1], 1, bias=False).to(device)
-        self.gating = nn.Linear(len(linear_feature_columns), 1, bias=True).to(device)
+        # self.gating = nn.Linear(len(linear_feature_columns), 1, bias=True).to(device)
 
     def compute_input_dim(self, feature_columns, include_sparse=True, include_dense=True):
         sparse_feature_columns = list(
@@ -83,14 +83,14 @@ class FiBiNET(BaseModel):
         bilinear_out = self.Bilinear(sparse_embedding_input)
 
         linear_logit = self.linear_model(X)
-        gate = torch.sigmoid(self.gating(X))
+        # gate = torch.sigmoid(self.gating(X))
         temp = torch.split(torch.cat((senet_bilinear_out, bilinear_out), dim=1), 1, dim=1)
-        dnn_input = combined_dnn_input(temp, dense_value_list)
+        dnn_input = combined_dnn_input(sparse_embedding_input, temp, dense_value_list)
         dnn_output = self.dnn(dnn_input)
         dnn_logit = self.dnn_linear(dnn_output)
 
         if len(self.linear_feature_columns) > 0 and len(self.dnn_feature_columns) > 0:  # linear + dnn
-            final_logit = gate * linear_logit + (1 - gate) * dnn_logit
+            final_logit = linear_logit + dnn_logit
         elif len(self.linear_feature_columns) == 0:
             final_logit = dnn_logit
         elif len(self.dnn_feature_columns) == 0:

@@ -119,13 +119,15 @@ def build_input_features(feature_columns):
     return features
 
 
-def combined_dnn_input(sparse_embedding_list, dense_value_list):
+def combined_dnn_input(raw_sparse_embedding, sparse_embedding_list, dense_value_list):
     if len(sparse_embedding_list) > 0 and len(dense_value_list) > 0:
+        raw_input = torch.flatten(
+            torch.cat(raw_sparse_embedding, dim=-1), start_dim=1)
         sparse_dnn_input = torch.flatten(
             torch.cat(sparse_embedding_list, dim=-1), start_dim=1)
         dense_dnn_input = torch.flatten(
             torch.cat(dense_value_list, dim=-1), start_dim=1)
-        return concat_fun([sparse_dnn_input, dense_dnn_input])
+        return concat_fun([raw_input, sparse_dnn_input, dense_dnn_input])
     elif len(sparse_embedding_list) > 0:
         return torch.flatten(torch.cat(sparse_embedding_list, dim=-1), start_dim=1)
     elif len(dense_value_list) > 0:
